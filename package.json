@@ -1,0 +1,11 @@
+{
+"name": "maestro",
+"version": "0.1.0",
+"description": "Application Controller for Platform.X",
+    "dependencies": {
+        "proctools": "0.1.0",
+        "q": "0.8.2",
+        "http-proxy": "0.8.0",
+        "logroll": "0.1.0"
+    }
+}
