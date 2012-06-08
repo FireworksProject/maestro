@@ -13,11 +13,11 @@ class exports.Controller extends EventEmitter
 
     restartApp: (aName, aCallback) ->
         abspath = PATH.join(@appdir, aName)
-        promise = startAppServer(aName, abspath).then (app) =>
-            aCallback({name: aName, port: aPort})
+        startAppServer(aName, abspath).fail(aCallback).then (app) ->
+            aCallback(null, {name: aName, port: app.port})
             exclude = app.pid
             return killAppServers(aName, exclude)
-        return promise
+        return @
 
 
 exports.createController = (spec) ->
@@ -27,10 +27,9 @@ exports.createController = (spec) ->
 startAppServer = (aName, aPath) ->
     promise = PROC.findOpenPort().then (port) ->
         opts =
-            command: 'enginemill'
+            command: 'node'
             args: [
-                '--path', aPath
-                '--hostname', 'localhost'
+                PATH.join(aPath, 'apprunner.js')
                 '--port', port
             ]
             buffer: yes

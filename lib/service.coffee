@@ -17,7 +17,8 @@ exports.createService = (aOpts, aCallback) ->
         return callback(null, app)
 
     mMonitor.subscribe 'restart_app', (appname, callback) ->
-        mController.restartApp appname, (app) ->
+        mController.restartApp appname, (err, app) ->
+            if err then return callback(err)
             mProxy.update(app.name, app.port)
             return callback(null, appname)
         return

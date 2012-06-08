@@ -21,16 +21,8 @@ class exports.Monitor extends EventEmitter
 
     handleRequest: (aReq, aRes) ->
         callback = (err, rv) ->
-            response =
-                result: rv
-                error: null
-            returnValue = JSON.stringify(response)
-            aRes.writeHead(201, {
-                'content-type': 'application/json'
-                'content-length': Buffer.byteLength(returnValue)
-            })
-            aRes.end(returnValue)
-            return
+            if err then return rpcRespondFail(aRes, err)
+            return rpcRespondOK(aRes, rv)
 
         methodName = aReq.method
         switch methodName
@@ -61,3 +53,31 @@ exports.Monitor::subscribe = exports.Monitor::addListener
 
 exports.createMonitor = ->
     return new exports.Monitor()
+
+
+rpcRespondOK = (aResponse, aResult) ->
+    response = rpcResponseText(null, aResult)
+    rpcWrite(aResponse, 201, response)
+    return
+
+
+rpcRespondFail = (aResponse, aError) ->
+    response = rpcResponseText(aError)
+    rpcWrite(aResponse, 500, response)
+    return
+
+
+rpcResponseText = (err, rv) ->
+    response =
+        result: rv or null
+        error: err or null
+    return JSON.stringify(response)
+
+
+rpcWrite = (aResponse, aStatus, aText) ->
+    aResponse.writeHead(aStatus, {
+        'content-type': 'application/json'
+        'content-length': Buffer.byteLength(aText)
+    })
+    aResponse.end(aText)
+    return

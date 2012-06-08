@@ -38,7 +38,7 @@ describe 'service module', ->
         return
 
 
-    it 'should', (done) ->
+    it 'should accept an http rcp request to register an app', (done) ->
         @expectCount(3)
         service = createService (err, info) ->
             app =
@@ -54,6 +54,22 @@ describe 'service module', ->
                 expect(result.name).toBe('default-app')
                 expect(result.hostname).toBe('default.example.com')
                 return done()
+        return
+
+
+    it 'should accept an http rcp request to restart an app', (done) ->
+        @expectCount(2)
+        service = createService (err, info) ->
+            opts =
+                uri: "http://#{DEFAULT_OPTS.hostname}:#{DEFAULT_MONITOR_PORT}"
+                json: {method: 'restart_app', params: 'default-app'}
+            REQ.post opts, (err, res, body) ->
+                if err then return done(err)
+                expect(res.statusCode).toBe(201)
+                result = body.result
+                expect(result).toBe('default-app')
+                return done()
+        return
         return
 
     return
