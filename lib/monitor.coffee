@@ -32,4 +32,4 @@ exports.Monitor::subscribe = exports.Monitor::addListener
 
 
 exports.createMonitor = ->
-    return new Monitor()
+    return new exports.Monitor()

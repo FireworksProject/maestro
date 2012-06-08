@@ -61,4 +61,5 @@ createServer = (portForHost) ->
 
         proxy.proxyRequest(req, res, opts)
         return
-    return
+
+    return server
