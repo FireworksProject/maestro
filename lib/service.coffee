@@ -12,16 +12,14 @@ exports.createService = (aOpts, aCallback) ->
     mProxy = PRX.createProxy()
     mController = CTRL.createController({appdir: aOpts.appdir})
 
-    mMonitor.on 'app-register', (app) ->
+    mMonitor.subscribe 'register_app', (app, callback) ->
         mProxy.register(app.name, app.hostname)
-        return
+        return callback(null, app)
 
-    mMonitor.on 'app-restart', (appname) ->
-        mController.restartApp(appname)
-        return
-
-    mController.on 'update', (app) ->
-        mProxy.update(app.name, app.port)
+    mMonitor.subscribe 'restart_app', (appname, callback) ->
+        mController.restartApp appname, (app) ->
+            mProxy.update(app.name, app.port)
+            return callback(null, appname)
         return
 
     mProxy.listen 8000, aOpts.hostname, (proxyAddress) ->

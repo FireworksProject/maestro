@@ -11,10 +11,10 @@ class exports.Controller extends EventEmitter
     constructor: (spec) ->
         @appdir = spec.appdir
 
-    restartApp: (aName) ->
+    restartApp: (aName, aCallback) ->
         abspath = PATH.join(@appdir, aName)
         promise = startAppServer(aName, abspath).then (app) =>
-            @emit('update', {name: aName, port: aPort})
+            aCallback({name: aName, port: aPort})
             exclude = app.pid
             return killAppServers(aName, exclude)
         return promise

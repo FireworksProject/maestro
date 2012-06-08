@@ -1,5 +1,7 @@
 PATH = require 'path'
 
+REQ = require 'request'
+
 DEFAULT_OPTS =
     hostname: '127.0.0.1'
     appdir: PATH.join(__dirname, 'fixtures')
@@ -17,7 +19,7 @@ describe 'service module', ->
         gService = SRVC.createService(DEFAULT_OPTS, callback)
         return gService
 
-    beforeRun (done) ->
+    beforeEach (done) ->
         if gService is null then return done()
         gService.close ->
             gService = null
@@ -33,6 +35,25 @@ describe 'service module', ->
             expect(info.monitor.address).toBe(DEFAULT_OPTS.hostname)
             expect(info.monitor.port).toBe(DEFAULT_MONITOR_PORT)
             return done()
+        return
+
+
+    it 'should', (done) ->
+        @expectCount(3)
+        service = createService (err, info) ->
+            app =
+                name: 'default-app'
+                hostname: 'default.example.com'
+            opts =
+                uri: "http://#{DEFAULT_OPTS.hostname}:#{DEFAULT_MONITOR_PORT}"
+                json: {method: 'register_app', params: [app]}
+            REQ.post opts, (err, res, body) ->
+                if err then return done(err)
+                expect(res.statusCode).toBe(201)
+                result = body.result
+                expect(result.name).toBe('default-app')
+                expect(result.hostname).toBe('default.example.com')
+                return done()
         return
 
     return

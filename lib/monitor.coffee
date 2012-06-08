@@ -1,20 +1,47 @@
-EventEmitter = require('events').EventEmitter
+HTTP = require 'http'
 
-TEL = require 'telegram'
+EventEmitter = require('events').EventEmitter
 
 
 class exports.Monitor extends EventEmitter
 
     constructor: ->
-        @server = TEL.createServer()
-        @server.subscribe 'app-register', (message) =>
-            [name, hostname] = message.split(' ')
-            @emit('app-register', {name: name, hostname: hostname})
+        self = @
+        @server = HTTP.createServer (req, res) ->
+            body = ''
+            req.setEncoding('utf8')
+            req.on 'data', (chunk) ->
+                body += chunk
+                return
+            req.on 'end', ->
+                rpcRequest = JSON.parse(body)
+                self.handleRequest(rpcRequest, res)
+                return
             return
-        @server.subscribe 'app-restart', (message) =>
-            appname = message
-            @emit('app-restart', appname)
+
+    handleRequest: (aReq, aRes) ->
+        callback = (err, rv) ->
+            response =
+                result: rv
+                error: null
+            returnValue = JSON.stringify(response)
+            aRes.writeHead(201, {
+                'content-type': 'application/json'
+                'content-length': Buffer.byteLength(returnValue)
+            })
+            aRes.end(returnValue)
             return
+
+        methodName = aReq.method
+        switch methodName
+            when 'register_app'
+                params = ['register_app'].concat(aReq.params)
+            when 'restart_app'
+                params = ['restart_app'].concat(aReq.params)
+
+        params.push(callback)
+        EventEmitter::emit.apply(@, params)
+        return @
 
     address: ->
         return @server.address()
@@ -26,6 +53,7 @@ class exports.Monitor extends EventEmitter
 
     close: (aCallback) ->
         @server.once('close', aCallback)
+        @server.close()
         return @
 
 exports.Monitor::subscribe = exports.Monitor::addListener
