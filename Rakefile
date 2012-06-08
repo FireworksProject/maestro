@@ -4,6 +4,10 @@ task :default => :build
 
 desc "Build Maestro"
 build_deps = [
+    'dist/lib/controller.js',
+    'dist/lib/proxy.js',
+    'dist/lib/monitor.js',
+    'dist/lib/service.js',
     'dist/package.json',
     'dist/cli.js'
 ]
@@ -38,6 +42,7 @@ end
 
 directory 'tmp'
 directory 'dist'
+directory 'dist/lib'
 
 file 'dist/package.json' => ['package.json', 'dist'] do |task|
     FileUtils.cp task.prerequisites.first, task.name
@@ -51,6 +56,22 @@ end
 file 'dist/cli.js' => ['cli.coffee', 'dist'] do |task|
     brew_javascript task.prerequisites.first, task.name, true
     File.chmod(0764, task.name)
+end
+
+file 'dist/lib/service.js' => ['lib/service.coffee', 'dist/lib'] do |task|
+    brew_javascript task.prerequisites.first, task.name
+end
+
+file 'dist/lib/monitor.js' => ['lib/monitor.coffee', 'dist/lib'] do |task|
+    brew_javascript task.prerequisites.first, task.name
+end
+
+file 'dist/lib/proxy.js' => ['lib/proxy.coffee', 'dist/lib'] do |task|
+    brew_javascript task.prerequisites.first, task.name
+end
+
+file 'dist/lib/controller.js' => ['lib/controller.coffee', 'dist/lib'] do |task|
+    brew_javascript task.prerequisites.first, task.name
 end
 
 def npm_install(package)
