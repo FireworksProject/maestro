@@ -13,7 +13,7 @@ class exports.Controller extends EventEmitter
 
     restartApp: (aName, aCallback) ->
         abspath = PATH.join(@appdir, aName)
-        startAppServer(aName, abspath).fail(aCallback).then (app) ->
+        startAppServer(aName, abspath, @).fail(aCallback).then (app) ->
             aCallback(null, {name: aName, port: app.port})
             exclude = app.pid
             return killAppServers(aName, exclude)
@@ -24,7 +24,7 @@ exports.createController = (spec) ->
     return new exports.Controller(spec)
 
 
-startAppServer = (aName, aPath) ->
+startAppServer = (aName, aPath, aEmitter) ->
     promise = PROC.findOpenPort().then (port) ->
         opts =
             command: 'node'

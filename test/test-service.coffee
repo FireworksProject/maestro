@@ -10,7 +10,7 @@ DEFAULT_PROXY_PORT = 8000
 DEFAULT_MONITOR_PORT = 7272
 
 
-describe 'service module', ->
+describe 'service monitor', ->
     SRVC = require '../dist/lib/service'
 
     gService = null
@@ -19,7 +19,7 @@ describe 'service module', ->
         gService = SRVC.createService(DEFAULT_OPTS, callback)
         return gService
 
-    beforeEach (done) ->
+    afterEach (done) ->
         if gService is null then return done()
         gService.close ->
             gService = null
@@ -69,7 +69,84 @@ describe 'service module', ->
                 result = body.result
                 expect(result).toBe('default-app')
                 return done()
+            return
         return
+
+    return
+
+
+describe 'service controller', ->
+    SRVC = require '../dist/lib/service'
+
+    gService = null
+
+
+    registerRestartWebapp = (app, next) ->
+        # Make the rpc request to register the app
+        opts =
+            uri: "http://#{DEFAULT_OPTS.hostname}:#{DEFAULT_MONITOR_PORT}"
+            json: {method: 'register_app', params: [app]}
+        REQ.post opts, (err, res, body) ->
+            if err then return next(err)
+
+            # Make the rpc requesta to start the app
+            opts =
+                uri: "http://#{DEFAULT_OPTS.hostname}:#{DEFAULT_MONITOR_PORT}"
+                json: {method: 'restart_app', params: app.name}
+            REQ.post opts, (err, res, body) ->
+                if err then return next(err)
+                return next()
+            return
+        return
+
+
+    beforeEach (done) ->
+        gService = SRVC.createService DEFAULT_OPTS, (err, info) ->
+            if err then return done(err)
+            app =
+                name: 'default-app'
+                hostname: 'default.example.com'
+            registerRestartWebapp app, (err) ->
+                return done(err)
+            return
+        return
+
+
+    afterEach (done) ->
+        if gService is null then return done()
+        gService.close ->
+            gService = null
+            return done()
+        return
+
+
+    it 'should be able to remotely re-configure an app', (done) ->
+        @expectCount(4)
+        opts =
+            uri: "http://localhost:8000"
+            headers: {'host': 'default.example.com'}
+        REQ.get opts, (err, res, body) ->
+            expect(res.statusCode).toBe(200)
+            expect(body).toBe('hello world')
+            testReplacement()
+            return
+
+        testReplacement = ->
+            app =
+                name: 'default-app'
+                hostname: 'replaced.example.com'
+            registerRestartWebapp app, (err) ->
+                if err then return done(err)
+                opts =
+                    uri: "http://localhost:8000"
+                    headers: {'host': 'replaced.example.com'}
+                REQ.get opts, (err, res, body) ->
+                    expect(res.statusCode).toBe(200)
+                    expect(body).toBe('hello world')
+                    return done()
+                return
+            return
+
         return
 
     return
