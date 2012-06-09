@@ -1,9 +1,17 @@
 process.title = 'maestro'
 
-setTimeout(->
-    console.log('Im a real boy!')
-, 100)
+SVC = require './lib/service'
 
-setTimeout(->
-    console.log('friendly exit')
-, 10000)
+main = (argv) ->
+    hostname = argv[2]
+    appdir = argv[3]
+
+    opts =
+        appdir: appdir
+        hostname: hostname
+    service = SVC.createService opts, (err, info) ->
+        console.log(info)
+        return
+    return
+
+main(process.argv)

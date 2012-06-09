@@ -12,8 +12,7 @@ class exports.Controller extends EventEmitter
         @appdir = spec.appdir
 
     restartApp: (aName, aCallback) ->
-        abspath = PATH.join(@appdir, aName)
-        startAppServer(aName, abspath, @).fail(aCallback).then (app) ->
+        startAppServer(aName, @appdir, @).fail(aCallback).then (app) ->
             aCallback(null, {name: aName, port: app.port})
             exclude = app.pid
             return killAppServers(aName, exclude)
@@ -29,7 +28,8 @@ startAppServer = (aName, aPath, aEmitter) ->
         opts =
             command: 'node'
             args: [
-                PATH.join(aPath, 'apprunner.js')
+                PATH.join(aPath, aName, 'apprunner.js')
+                '--name', aName
                 '--port', port
             ]
             buffer: yes
@@ -50,6 +50,6 @@ killAppServers = (aName, aExclude) ->
             return killProcesses(processes)
         return
 
-    regex = new RegExp("\senginemill\s#{aName}\s")
+    regex = new RegExp("\\sapprunner\\.#{aName}\\s")
     PROC.findProcess(regex).then(killProcesses).fail(deferred.reject)
     return deferred.promise
