@@ -1,6 +1,7 @@
 {
 "name": "maestro",
 "version": "0.1.0",
+"bin": {"maestro": "./cli.js"},
 "description": "Application Controller for Platform.X",
     "dependencies": {
         "proctools": "0.1.0",

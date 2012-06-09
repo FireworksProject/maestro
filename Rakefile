@@ -24,6 +24,14 @@ task :setup => 'tmp/setup.dump' do
     puts "dev environment setup done"
 end
 
+desc "Publish a Maestro tarball to GitHub for deployment"
+task :publish do
+    version = `bin/getversion.js`
+    tarball = "/tmp/maestro-#{version}.tar.gz"
+    sh "tar -C ./dist -czf #{tarball} ./"
+    puts "upload the tarbal from #{tarball}"
+end
+
 task :clean do
     rm_rf 'tmp'
     rm_rf 'node_modules'
