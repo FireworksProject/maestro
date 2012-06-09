@@ -44,19 +44,20 @@ exports.createProxy = ->
 
 createServer = (portForHost) ->
     server = HTPX.createServer (req, res, proxy) ->
-        hostHeader = req.headers.host
+        hostHeader = req.headers.host or ''
+        hostname = hostHeader.split(':').shift()
         opts =
             host: '127.0.0.1'
-            port: portForHost(hostHeader)
+            port: portForHost(hostname)
 
         if typeof opts.port isnt 'number'
             resBody = "host '#{hostHeader}' not found on this server."
             resHeaders =
                 'content-type': 'text/plain'
-                'content-length': resBody.length
+                'content-length': Buffer.byteLength(resBody)
 
-            aResponse.writeHead(404, resHeaders)
-            aResponse.end(resBody, 'utf8')
+            res.writeHead(404, resHeaders)
+            res.end(resBody, 'utf8')
             return
 
         proxy.proxyRequest(req, res, opts)
