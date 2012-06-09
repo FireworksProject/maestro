@@ -73,5 +73,4 @@ describe 'http proxy module', ->
                 return done()
             return
         return
-
     return

@@ -6,7 +6,7 @@ desc "Build Maestro"
 build_deps = [
     'dist/lib/controller.js',
     'dist/lib/proxy.js',
-    'dist/lib/monitor.js',
+    'dist/lib/rpcserver.js',
     'dist/lib/service.js',
     'dist/package.json',
     'dist/cli.js'
@@ -62,7 +62,7 @@ file 'dist/lib/service.js' => ['lib/service.coffee', 'dist/lib'] do |task|
     brew_javascript task.prerequisites.first, task.name
 end
 
-file 'dist/lib/monitor.js' => ['lib/monitor.coffee', 'dist/lib'] do |task|
+file 'dist/lib/rpcserver.js' => ['lib/rpcserver.coffee', 'dist/lib'] do |task|
     brew_javascript task.prerequisites.first, task.name
 end
 
