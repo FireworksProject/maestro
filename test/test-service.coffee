@@ -3,9 +3,20 @@ PATH = require 'path'
 REQ = require 'request'
 DNODE = require 'dnode'
 
+gLogBuffer = ''
+gNullStream =
+    write: (chunk) ->
+        gLogBuffer += chunk
+
+gGetLogs = ->
+    rv = gLogBuffer
+    gLogBuffer = ''
+    return rv
+
 DEFAULT_OPTS =
     hostname: '127.0.0.1'
     appdir: PATH.join(__dirname, 'fixtures')
+    LOG: require('fplatform-logger').createLogger('test-service', {stream: gNullStream})
 
 DEFAULT_PROXY_PORT = 8000
 DEFAULT_MONITOR_PORT = 7272
@@ -19,6 +30,10 @@ describe 'service monitor', ->
     createService = (callback) ->
         gService = SRVC.createService(DEFAULT_OPTS, callback)
         return gService
+
+    beforeEach (done) ->
+        gLogBuffer = ''
+        return done()
 
     afterEach (done) ->
         if gService is null then return done()
@@ -40,7 +55,7 @@ describe 'service monitor', ->
 
 
     it 'should accept a rcp request to register an app', (done) ->
-        @expectCount(2)
+        @expectCount(6)
         service = createService (err, info) ->
             app =
                 name: 'default-app'
@@ -48,6 +63,14 @@ describe 'service monitor', ->
 
             DNODE.connect DEFAULT_MONITOR_PORT, DEFAULT_OPTS.hostname, (remote) ->
                 remote.register_app app, (err, result) ->
+                    logs = gGetLogs().split('\n')
+                    connectionLog = JSON.parse(logs[0])
+                    registerLog = JSON.parse(logs[1])
+                    expect(connectionLog.level).toBe(30)
+                    expect(connectionLog.msg).toBe("RPC connection from 127.0.0.1")
+                    expect(registerLog.level).toBe(30)
+                    expect(registerLog.msg).toBe("register app: default-app to default.example.com")
+
                     expect(result.name).toBe('default-app')
                     expect(result.hostname).toBe('default.example.com')
                     return done()
@@ -57,11 +80,23 @@ describe 'service monitor', ->
 
 
     it 'should accept a rcp request to restart an app', (done) ->
-        @expectCount(1)
+        @expectCount(5)
         service = createService (err, info) ->
             DNODE.connect DEFAULT_MONITOR_PORT, DEFAULT_OPTS.hostname, (remote) ->
                 remote.restart_app 'default-app', (err, result) ->
                     if err then return done(new Error(err.message))
+
+                    logs = gGetLogs().split('\n')
+                    if /RPC socket closed/.test(JSON.parse(logs[0]).msg)
+                        logs.shift()
+
+                    connectionLog = JSON.parse(logs[0])
+                    registerLog = JSON.parse(logs[1])
+                    expect(connectionLog.level).toBe(30)
+                    expect(connectionLog.msg).toBe("RPC connection from 127.0.0.1")
+                    expect(registerLog.level).toBe(30)
+                    expect(/restart app: default-app on/.test(registerLog.msg)).toBe(true)
+
                     expect(result).toBe('default-app')
                     return done()
                 return

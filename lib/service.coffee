@@ -7,20 +7,27 @@ CTRL = require './controller'
 # aOpts.appdir
 # aOpts.hostname
 exports.createService = (aOpts, aCallback) ->
+    LOG = aOpts.LOG
     self = new EventEmitter()
 
-    mProxy = PRX.createProxy()
+    mProxy = PRX.createProxy({LOG: LOG})
     mController = CTRL.createController({appdir: aOpts.appdir})
 
-    mRPCServer = RPC.createServer({
+    mRPCServer = RPC.createServer(LOG, {
         register_app: (app, callback) ->
             mProxy.register(app.name, app.hostname)
+            LOG.info("register app: #{app.name} to #{app.hostname}")
             return callback(null, app)
 
         restart_app: (appname, callback) ->
             mController.restartApp appname, (err, app) ->
-                if err then return callback(err)
+                if err
+                    LOG.error(err, "restart app error")
+                    return callback(err)
+
+                LOG.info("restart app: #{app.name} on #{app.port}")
                 mProxy.update(app.name, app.port)
+                LOG.info("update app: #{app.name} on #{app.port}")
                 return callback(null, appname)
             return
     })

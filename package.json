@@ -5,6 +5,7 @@
 "description": "Application Controller for Platform.X",
     "dependencies": {
         "proctools": "0.1.0",
+        "fplatform-logger": "git://github.com/FireworksProject/fplatform-logger.git#0.1.0",
         "q": "0.8.2",
         "http-proxy": "0.8.0",
         "dnode": "0.9.11"

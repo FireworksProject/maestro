@@ -13,12 +13,29 @@ afterRun (done) ->
     return
 
 it 'should run on command', (done) ->
-    @expectCount(4)
+    @expectCount(7)
 
     whenRunning = (serverProc) ->
-        # line = JSON.parse(serverProc.stdoutBuffer)
-        # expect(line.msg).toBe("telegram server running at 127.0.0.1:7272")
-        expect(serverProc.stderrBuffer).toBe('')
+        writeCount = 0
+        buff = ''
+        serverProc.stdout.on 'data', (chunk) ->
+            buff += chunk
+            writeCount += 1
+            if writeCount > 1 then return test(buff, serverProc)
+            return
+        serverProc.stderr.on 'data', (chunk) ->
+            return done(new Error(chunk))
+        return
+
+    test = (buff, serverProc) ->
+        lines = buff.split('\n')
+        proxyMessage = JSON.parse(lines[0])
+        rpcMessage = JSON.parse(lines[1])
+
+        expect(proxyMessage.level).toBe(30)
+        expect(proxyMessage.msg).toBe("started proxy server on 127.0.0.1:8000")
+        expect(rpcMessage.level).toBe(30)
+        expect(rpcMessage.msg).toBe("started rpc server on 127.0.0.1:7272")
 
         PROC.findProcess(gProcTitle).then (found) ->
             foundProc = found[0] or {}
@@ -30,8 +47,8 @@ it 'should run on command', (done) ->
 
     opts =
         command: 'dist/cli.js'
-        args: []
-        buffer: on
+        args: ['localhost']
+        background: on
 
     PROC.runCommand(opts).then(whenRunning).fail(done)
     return

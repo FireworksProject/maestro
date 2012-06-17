@@ -1,5 +1,7 @@
 process.title = 'maestro'
 
+LOG = require('fplatform-logger').createLogger(process.title)
+
 SVC = require './lib/service'
 
 main = (argv) ->
@@ -9,8 +11,11 @@ main = (argv) ->
     opts =
         appdir: appdir
         hostname: hostname
+        LOG: LOG
     service = SVC.createService opts, (err, info) ->
-        console.log(info)
+        {proxy, rpcserver} = info
+        LOG.info("started proxy server on #{proxy.address}:#{proxy.port}")
+        LOG.info("started rpc server on #{rpcserver.address}:#{rpcserver.port}")
         return
     return
 

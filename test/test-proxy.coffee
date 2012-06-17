@@ -2,7 +2,18 @@ HTTP = require 'http'
 
 REQ = require 'request'
 
+gLogBuffer = ''
+gNullStream =
+    write: (chunk) ->
+        gLogBuffer += chunk
+
+gGetLogs = ->
+    rv = gLogBuffer
+    gLogBuffer = ''
+    return rv
+
 DEFAULT_PROXY_PORT = 8000
+LOG = require('fplatform-logger').createLogger('test-proxy', {stream: gNullStream})
 
 describe 'http proxy module', ->
     PRX = require '../dist/lib/proxy'
@@ -10,8 +21,13 @@ describe 'http proxy module', ->
     gServer = null
 
     createServer = ->
-        gServer = PRX.createProxy()
+        gServer = PRX.createProxy({LOG: LOG})
         return gServer
+
+
+    beforeEach (done) ->
+        gLogBuffer = ''
+        return done()
 
 
     afterEach (done) ->
@@ -32,7 +48,8 @@ describe 'http proxy module', ->
         return
 
 
-    it 'should', (done) ->
+    it 'should accept an HTTP request', (done) ->
+        @expectCount(6)
         appserver = null
         proxy = createServer()
         proxy.listen DEFAULT_PROXY_PORT, 'localhost', (info) ->
@@ -59,17 +76,30 @@ describe 'http proxy module', ->
 
                 expect(res.statusCode).toBe(200)
                 expect(res.body).toBe('hello from 8008')
+
+                log = JSON.parse(gGetLogs().split('\n')[0])
+                expect(log.level).toBe(30)
+                expect(log.host_header).toBe('default.example.com:8080')
+                expect(log.target_port).toBe(8008)
+                expect(log.source_ip).toBe('127.0.0.1')
                 return done()
             return
         return
 
 
     it 'should return 404 for unregistered domains', (done) ->
+        @expectCount(6)
         proxy = createServer()
         proxy.listen DEFAULT_PROXY_PORT, 'localhost', (info) ->
             REQ.get "http://localhost:#{DEFAULT_PROXY_PORT}", (err, res, body) ->
                 expect(res.statusCode).toBe(404)
                 expect(res.body).toBe("host 'localhost:8000' not found on this server.")
+
+                log = JSON.parse(gGetLogs().split('\n')[0])
+                expect(log.level).toBe(30)
+                expect(log.host_header).toBe('localhost:8000')
+                expect(log.target_port).toBeUndefined()
+                expect(log.source_ip).toBe('127.0.0.1')
                 return done()
             return
         return

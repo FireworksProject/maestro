@@ -5,11 +5,11 @@ HTPX = require 'http-proxy'
 
 class exports.Proxy extends EventEmitter
 
-    constructor: ->
+    constructor: (@LOG) ->
         @applications = {}
         @addresses = {}
         self = @
-        @server = createServer (hostname) ->
+        @server = createServer @LOG, (hostname) ->
             return self.lookup(hostname)
 
     update: (aName, aPort) ->
@@ -38,17 +38,23 @@ class exports.Proxy extends EventEmitter
         return @
 
 
-exports.createProxy = ->
-    return new exports.Proxy()
+exports.createProxy = (aOpts) ->
+    return new exports.Proxy(aOpts.LOG)
 
 
-createServer = (portForHost) ->
+createServer = (LOG, portForHost) ->
     server = HTPX.createServer (req, res, proxy) ->
         hostHeader = req.headers.host or ''
         hostname = hostHeader.split(':').shift()
         opts =
             host: '127.0.0.1'
             port: portForHost(hostname)
+
+        log =
+            host_header: hostHeader
+            target_port: opts.port
+            source_ip: req.connection.remoteAddress
+        LOG.info(log, "app request")
 
         if typeof opts.port isnt 'number'
             resBody = "host '#{hostHeader}' not found on this server."
