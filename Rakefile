@@ -4,6 +4,7 @@ task :default => :build
 
 desc "Build Maestro"
 build_deps = [
+    :setup,
     'dist/lib/controller.js',
     'dist/lib/proxy.js',
     'dist/lib/rpcserver.js',
@@ -93,6 +94,6 @@ def brew_javascript(source, target, node_exec=false)
         if node_exec
             fd << "#!/usr/bin/env node\n\n"
         end
-        fd << %x[coffee -pb #{source}]
+        fd << %x[./node_modules/.bin/coffee -pb #{source}]
     end
 end

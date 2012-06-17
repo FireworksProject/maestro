@@ -118,6 +118,7 @@ describe 'service controller', ->
             uri: "http://localhost:8000"
             headers: {'host': 'default.example.com'}
         REQ.get opts, (err, res, body) ->
+            if err then return done(new Error(err.message))
             expect(res.statusCode).toBe(200)
             expect(body).toBe('hello world')
             testReplacement()
