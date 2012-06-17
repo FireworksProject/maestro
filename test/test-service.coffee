@@ -55,7 +55,7 @@ describe 'service monitor', ->
 
 
     it 'should accept a rcp request to register an app', (done) ->
-        @expectCount(6)
+        @expectCount(5)
         service = createService (err, info) ->
             app =
                 name: 'default-app'
@@ -71,8 +71,7 @@ describe 'service monitor', ->
                     expect(registerLog.level).toBe(30)
                     expect(registerLog.msg).toBe("register app: default-app to default.example.com")
 
-                    expect(result.name).toBe('default-app')
-                    expect(result.hostname).toBe('default.example.com')
+                    expect(result['default-app']).toBe('default.example.com')
                     return done()
                 return
             return
@@ -97,7 +96,7 @@ describe 'service monitor', ->
                     expect(registerLog.level).toBe(30)
                     expect(/restart app: default-app on/.test(registerLog.msg)).toBe(true)
 
-                    expect(result).toBe('default-app')
+                    expect(result['default-app']).toBeUndefined()
                     return done()
                 return
             return
@@ -117,7 +116,7 @@ describe 'service controller', ->
         gRPC.register_app app, (err, result) ->
             gRPC.restart_app app.name, (err, result) ->
                 if err then next(err)
-                return next()
+                return next(null, result)
             return
         return
 
@@ -148,7 +147,7 @@ describe 'service controller', ->
 
 
     it 'should be able to remotely re-configure an app', (done) ->
-        @expectCount(4)
+        @expectCount(5)
         opts =
             uri: "http://localhost:8000"
             headers: {'host': 'default.example.com'}
@@ -163,8 +162,11 @@ describe 'service controller', ->
             app =
                 name: 'default-app'
                 hostname: 'replaced.example.com'
-            registerRestartWebapp app, (err) ->
+            registerRestartWebapp app, (err, result) ->
                 if err then return done(new Error(err.message))
+
+                expect(result['default-app']).toBe('replaced.example.com')
+
                 opts =
                     uri: "http://localhost:8000"
                     headers: {'host': 'replaced.example.com'}

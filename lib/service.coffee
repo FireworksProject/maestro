@@ -17,7 +17,7 @@ exports.createService = (aOpts, aCallback) ->
         register_app: (app, callback) ->
             mProxy.register(app.name, app.hostname)
             LOG.info("register app: #{app.name} to #{app.hostname}")
-            return callback(null, app)
+            return callback(null, mProxy.applications)
 
         restart_app: (appname, callback) ->
             mController.restartApp appname, (err, app) ->
@@ -28,7 +28,7 @@ exports.createService = (aOpts, aCallback) ->
                 LOG.info("restart app: #{app.name} on #{app.port}")
                 mProxy.update(app.name, app.port)
                 LOG.info("update app: #{app.name} on #{app.port}")
-                return callback(null, appname)
+                return callback(null, mProxy.applications)
             return
     })
 
