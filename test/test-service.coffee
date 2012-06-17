@@ -61,6 +61,7 @@ describe 'service monitor', ->
         service = createService (err, info) ->
             DNODE.connect DEFAULT_MONITOR_PORT, DEFAULT_OPTS.hostname, (remote) ->
                 remote.restart_app 'default-app', (err, result) ->
+                    if err then return done(new Error(err.message))
                     expect(result).toBe('default-app')
                     return done()
                 return
@@ -96,7 +97,8 @@ describe 'service controller', ->
                     name: 'default-app'
                     hostname: 'default.example.com'
                 registerRestartWebapp app, (err) ->
-                    return done(err)
+                    if err then return done(new Error(err.message))
+                    return done()
                 return
             return
         return
@@ -126,7 +128,7 @@ describe 'service controller', ->
                 name: 'default-app'
                 hostname: 'replaced.example.com'
             registerRestartWebapp app, (err) ->
-                if err then return done(err)
+                if err then return done(new Error(err.message))
                 opts =
                     uri: "http://localhost:8000"
                     headers: {'host': 'replaced.example.com'}
