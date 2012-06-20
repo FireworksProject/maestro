@@ -16,6 +16,7 @@ gGetLogs = ->
 DEFAULT_OPTS =
     hostname: '127.0.0.1'
     appdir: PATH.join(__dirname, 'fixtures')
+    logging: off
     LOG: require('fplatform-logger').createLogger('test-service', {stream: gNullStream})
 
 DEFAULT_PROXY_PORT = 8000

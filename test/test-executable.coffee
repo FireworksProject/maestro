@@ -1,8 +1,16 @@
+PATH = require 'path'
+
 PROC = require 'proctools'
+DNODE = require 'dnode'
+REQ = require 'request'
+
+FIXTURES = PATH.join(__dirname, 'fixtures')
+DEFAULT_PROXY_PORT = 8000
+DEFAULT_MONITOR_PORT = 7272
 
 gProcTitle = /\smaestro\s/
 
-afterRun (done) ->
+kill = (done) ->
     kill = (proc) ->
         if not proc.length then return done()
         promise = PROC.kill(proc[0].pid).then ->
@@ -11,6 +19,10 @@ afterRun (done) ->
 
     PROC.findProcess(gProcTitle).then(kill).fail(done)
     return
+
+beforeEach(kill)
+afterEach(kill)
+
 
 it 'should run on command', (done) ->
     @expectCount(7)
@@ -51,4 +63,48 @@ it 'should run on command', (done) ->
         background: on
 
     PROC.runCommand(opts).then(whenRunning).fail(done)
+    return
+
+
+it 'should log application output', (done) ->
+    @expectCount(1)
+
+    timeout = null
+    self = @
+    whenRunning = (serverProc) ->
+        DNODE.connect DEFAULT_MONITOR_PORT, '127.0.0.1', (remote) ->
+            app =
+                name: 'error-app'
+                hostname: 'error.example.com'
+            remote.register_app app, (err, result) ->
+                remote.restart_app app.name, (err, result) ->
+                    if err then done(new Error(err.message))
+                    return test(serverProc.stderr)
+                return
+        return
+
+    test = (serverStderr) ->
+        serverStderr.on 'data', (chunk) ->
+            check = /Error: test fatal error/.test(chunk)
+            if check
+                expect(check).toBe(true)
+                if timeout then clearTimeout(timeout)
+                return done()
+            return
+
+        req =
+            uri: "http://localhost:8000"
+            headers: {'host': 'error.example.com'}
+        REQ.get req, (err, res, body) ->
+            return
+        return
+
+    opts =
+        command: 'dist/cli.js'
+        args: ['localhost', FIXTURES]
+        buffer: on
+
+    PROC.runCommand(opts).then(whenRunning).fail(done)
+
+    timeout = setTimeout(done, 1000)
     return

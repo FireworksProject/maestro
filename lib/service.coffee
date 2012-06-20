@@ -6,12 +6,17 @@ CTRL = require './controller'
 
 # aOpts.appdir
 # aOpts.hostname
+# aOpts.LOG
+# [aOpts.logging]
 exports.createService = (aOpts, aCallback) ->
     LOG = aOpts.LOG
     self = new EventEmitter()
 
     mProxy = PRX.createProxy({LOG: LOG})
-    mController = CTRL.createController({appdir: aOpts.appdir})
+    mController = CTRL.createController({
+        appdir: aOpts.appdir
+        logging: aOpts.logging
+    })
 
     mRPCServer = RPC.createServer(LOG, {
         register_app: (app, callback) ->
