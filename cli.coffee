@@ -30,9 +30,11 @@ main = (argv) ->
 
 killOld = (aCallback) ->
     kill = (procs) ->
+        procs or= {}
         if not procs or procs.length is 1 then return aCallback()
-        pid = procs.shift()
-        return PROC.kill(pid).then(kill)
+        pid = procs.shift().pid
+        return PROC.kill(pid).fail(aCallback).then ->
+            return kill(procs)
 
     PROC.findProcess(TITLE_RX).then(kill).fail(aCallback)
     return
