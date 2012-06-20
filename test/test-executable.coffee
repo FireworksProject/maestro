@@ -20,7 +20,6 @@ kill = (done) ->
     PROC.findProcess(gProcTitle).then(kill).fail(done)
     return
 
-beforeEach(kill)
 afterEach(kill)
 
 
