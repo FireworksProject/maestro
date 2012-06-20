@@ -1,6 +1,6 @@
 {
 "name": "maestro",
-"version": "0.2.0",
+"version": "0.3.0",
 "bin": {"maestro": "./cli.js"},
 "description": "Application Controller for Platform.X",
     "dependencies": {
