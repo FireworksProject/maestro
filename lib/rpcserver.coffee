@@ -10,19 +10,53 @@ class exports.Server extends EventEmitter
         @rpcServer = DNODE(spec)
 
     listen: (aPort, aHost, aCallback) ->
-        @rpcServer.once 'ready', =>
+        # If the server is already running
+        if @rpcServer.server
             return aCallback(@rpcServer.server.address())
-        @rpcServer.listen(aPort, aHost)
-        @rpcServer.server.on 'connection', (connection) =>
-            address = connection.remoteAddress
-            @LOG.info("RPC connection from #{address}")
-            connection.once 'close', (hadError) =>
-                if hadError
-                    @LOG.warn("RPC socket transmission error from #{connection.remoteAddress}")
-                @LOG.info("RPC socket closed from #{address}")
-                return
-            @connections.push(connection)
+
+        self = @
+        log = @LOG
+        rpcServer = @rpcServer
+        connections = @connections
+
+        onerror = ->
+            resolved = false
+            handler = (err) ->
+                if resolved then return
+                resolved = true
+                if err.code is 'EADDRINUSE'
+                    return setTimeout(startServer , 50)
+                return self.emit('error', err)
+            return handler
+
+        startServer = ->
+            errorHandler = onerror()
+
+            rpcServer.once 'ready', ->
+                server = rpcServer.server
+                addr = server.address()
+                if not addr then return
+
+                rpcServer.removeListener('error', errorHandler)
+
+                server.on 'connection', (connection) =>
+                    address = connection.remoteAddress
+                    log.info("RPC connection from #{address}")
+                    connection.once 'close', (hadError) =>
+                        if hadError
+                            log.warn("RPC socket transmission error from #{connection.remoteAddress}")
+                        log.info("RPC socket closed from #{address}")
+                        return
+                    connections.push(connection)
+                    return
+
+                return aCallback(addr)
+
+            rpcServer.on('error', errorHandler)
+            rpcServer.listen(aPort, aHost)
             return
+
+        startServer()
         return @
 
     close: (aCallback) ->

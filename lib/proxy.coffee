@@ -28,8 +28,26 @@ class exports.Proxy extends EventEmitter
         return @server.address()
 
     listen: (aPort, aHost, aCallback) ->
-        @server.listen aPort, aHost, =>
-            aCallback(@server.address())
+        resolved = false
+        server = @server
+
+        onerror = (err) =>
+            if err.code is 'EADDRINUSE'
+                return setTimeout(startServer , 50)
+            return @emit('error', err)
+
+        startServer = ->
+            server.once('error', onerror)
+
+            server.listen aPort, aHost, ->
+                server.removeListener('error', onerror)
+                if resolved then return
+                resolved = true
+                aCallback(server.address())
+                return
+            return
+
+        startServer()
         return @
 
     close: (aCallback) ->
