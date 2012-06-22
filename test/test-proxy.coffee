@@ -103,4 +103,17 @@ describe 'http proxy module', ->
                 return done()
             return
         return
+
+
+    it 'should return 200 for ping path (AWS load balancer)', (done) ->
+        @expectCount(2)
+        proxy = createServer()
+        proxy.listen DEFAULT_PROXY_PORT, 'localhost', (info) ->
+            REQ.get "http://localhost:#{DEFAULT_PROXY_PORT}/_ping_", (err, res, body) ->
+                expect(res.statusCode).toBe(200)
+                expect(res.body).toBe("pong")
+                return done()
+            return
+        return
+
     return

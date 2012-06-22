@@ -75,12 +75,18 @@ createServer = (LOG, portForHost) ->
         LOG.info(log, "app request")
 
         if typeof opts.port isnt 'number'
-            resBody = "host '#{hostHeader}' not found on this server."
+            if req.url is '/_ping_'
+                resBody = "pong"
+                statusCode = 200
+            else
+                resBody = "host '#{hostHeader}' not found on this server."
+                statusCode = 404
+
             resHeaders =
                 'content-type': 'text/plain'
                 'content-length': Buffer.byteLength(resBody)
 
-            res.writeHead(404, resHeaders)
+            res.writeHead(statusCode, resHeaders)
             res.end(resBody, 'utf8')
             return
 
