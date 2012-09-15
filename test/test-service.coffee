@@ -86,6 +86,8 @@ describe 'service monitor', ->
                 remote.restart_app 'default-app', (err, result) ->
                     if err then return done(new Error(err.message))
 
+                    # The last test will leave a hanging log line which we want
+                    # to igore for this test.
                     logs = gGetLogs().split('\n')
                     if /RPC socket closed/.test(JSON.parse(logs[0]).msg)
                         logs.shift()
@@ -102,6 +104,64 @@ describe 'service monitor', ->
                 return
             return
         return
+
+
+    it 'should register an app with long start time', (done) ->
+        @expectCount(5)
+
+        service = createService (err, info) ->
+            app =
+                name: 'timeout-app'
+                hostname: 'timeout.example.com'
+
+            DNODE.connect DEFAULT_MONITOR_PORT, DEFAULT_OPTS.hostname, (remote) ->
+                remote.register_app app, (err, result) ->
+                    # The last test will leave a hanging log line which we want
+                    # to igore for this test.
+                    logs = gGetLogs().split('\n')
+                    if /RPC socket closed/.test(JSON.parse(logs[0]).msg)
+                        logs.shift()
+
+                    connectionLog = JSON.parse(logs[0])
+                    registerLog = JSON.parse(logs[1])
+                    expect(connectionLog.level).toBe(30)
+                    expect(connectionLog.msg).toBe("RPC connection from 127.0.0.1")
+                    expect(registerLog.level).toBe(30)
+                    expect(registerLog.msg).toBe("register app: timeout-app to timeout.example.com")
+
+                    expect(result['timeout-app']).toBe('timeout.example.com')
+                    return done()
+                return
+            return
+        return
+
+
+    it 'should restart an app with a long start time', (done) ->
+        @expectCount(5)
+        service = createService (err, info) ->
+            DNODE.connect DEFAULT_MONITOR_PORT, DEFAULT_OPTS.hostname, (remote) ->
+                remote.restart_app 'timeout-app', (err, result) ->
+                    if err then return done(new Error(err.message))
+
+                    # The last test will leave a hanging log line which we want
+                    # to igore for this test.
+                    logs = gGetLogs().split('\n')
+                    if /RPC socket closed/.test(JSON.parse(logs[0]).msg)
+                        logs.shift()
+
+                    connectionLog = JSON.parse(logs[0])
+                    registerLog = JSON.parse(logs[1])
+                    expect(connectionLog.level).toBe(30)
+                    expect(connectionLog.msg).toBe("RPC connection from 127.0.0.1")
+                    expect(registerLog.level).toBe(30)
+                    expect(/restart app: timeout-app on/.test(registerLog.msg)).toBe(true)
+
+                    expect(result['timeout-app']).toBeUndefined()
+                    return done()
+                return
+            return
+        return
+
 
     return
 

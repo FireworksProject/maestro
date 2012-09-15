@@ -35,6 +35,7 @@ startAppServer = (aName, aPath, aEmitter, af_Log) ->
                 '--port', port
             ]
             buffer: yes
+            timeLimit: 3333
         return PROC.runCommand(opts).then (proc) ->
             if af_Log
                 if proc.stdoutBuffer then process.stdout.write(proc.stdoutBuffer)
