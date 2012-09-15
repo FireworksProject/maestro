@@ -26,6 +26,7 @@ afterEach(kill)
 it 'should run on command', (done) ->
     @expectCount(7)
 
+    # Collect stdout for testing
     whenRunning = (serverProc) ->
         writeCount = 0
         buff = ''
@@ -38,6 +39,7 @@ it 'should run on command', (done) ->
             return done(new Error(chunk))
         return
 
+    # Test after getting stdout
     test = (buff, serverProc) ->
         lines = buff.split('\n')
         proxyMessage = JSON.parse(lines[0])
@@ -48,6 +50,7 @@ it 'should run on command', (done) ->
         expect(rpcMessage.level).toBe(30)
         expect(rpcMessage.msg).toBe("started rpc server on 127.0.0.1:7272")
 
+        # Make sure only one process is running
         PROC.findProcess(gProcTitle).then (found) ->
             foundProc = found[0] or {}
             expect(found.length).toBe(1)
@@ -56,6 +59,7 @@ it 'should run on command', (done) ->
             return done()
         return
 
+    # Start Maestro
     opts =
         command: 'dist/cli.js'
         args: ['localhost']
@@ -67,9 +71,10 @@ it 'should run on command', (done) ->
 
 it 'should log application output', (done) ->
     @expectCount(1)
-
     timeout = null
-    self = @
+
+    # After Maestro is running, register a remote app
+    # (which will throw an error)
     whenRunning = (serverProc) ->
         DNODE.connect DEFAULT_MONITOR_PORT, '127.0.0.1', (remote) ->
             app =
@@ -82,6 +87,7 @@ it 'should log application output', (done) ->
                 return
         return
 
+    # Ensure errors are reported on stderr
     test = (serverStderr) ->
         serverStderr.on 'data', (chunk) ->
             check = /Error: test fatal error/.test(chunk)
@@ -98,6 +104,7 @@ it 'should log application output', (done) ->
             return
         return
 
+    # Start Maestro
     opts =
         command: 'dist/cli.js'
         args: ['localhost', FIXTURES]
